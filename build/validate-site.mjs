@@ -95,7 +95,13 @@ for (const required of [
   "_headers",
   "_redirects",
   "site.webmanifest",
-  "assets/favicon.svg",
+  "assets/favicon.ico",
+  "assets/favicon-16x16.png",
+  "assets/favicon-32x32.png",
+  "assets/apple-touch-icon.png",
+  "assets/android-chrome-192x192.png",
+  "assets/android-chrome-512x512.png",
+  "assets/casevault-wordmark.png",
   "assets/casevault-social.png",
 ]) {
   if (!(await exists(join(output, required)))) failures.push(`missing ${required}`);
