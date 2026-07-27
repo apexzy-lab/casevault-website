@@ -463,6 +463,24 @@ function jsonLd(path) {
   return schemas.map((schema)=>`<script type="application/ld+json">${JSON.stringify(schema)}</script>`).join("");
 }
 
+function trackingScripts() {
+  return `<!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DMWXJF49EN"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-DMWXJF49EN');
+    </script>
+    <script type="text/javascript">
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "xho5gxn9ua");
+    </script>`;
+}
+
 function shell(path, body) {
   const data = pageData[path] || pageData["/"];
   const canonical = `${DOMAIN}${path === "/" ? "/" : path}`;
@@ -475,7 +493,7 @@ function shell(path, body) {
     <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${data.title}"><meta name="twitter:description" content="${data.description}"><meta name="twitter:image" content="${DOMAIN}/assets/casevault-social.png">
     <meta name="application-name" content="Casevault"><meta name="apple-mobile-web-app-title" content="Casevault">
     <link rel="icon" href="/assets/favicon.ico" sizes="any"><link rel="icon" href="/assets/favicon-32x32.png" type="image/png" sizes="32x32"><link rel="icon" href="/assets/favicon-16x16.png" type="image/png" sizes="16x16"><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" sizes="180x180"><link rel="manifest" href="/site.webmanifest">
-    ${jsonLd(path)}<style>${css}</style>
+    ${jsonLd(path)}<style>${css}</style>${trackingScripts()}
   </head><body>${header()}${body}${footer()}</body></html>`;
 }
 
@@ -504,5 +522,5 @@ export function renderSite() {
 }
 
 export function render404() {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Page not found | Casevault</title><style>${css}</style></head><body>${header()}<main id="main"><section class="page-hero"><div class="wrap"><div class="page-hero-grid"><div><span class="eyebrow"><i class="signal"></i>404 · Page not found</span><h1>This case file is not here.</h1><p>The page may have moved during the Casevault website rebuild. Return home or explore the platform.</p><div class="hero-actions"><a class="btn" href="/">Back to Casevault →</a><a class="btn ghost" href="/features/">Explore features</a></div></div>${dashboard()}</div></div></section></main>${footer()}</body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Page not found | Casevault</title><style>${css}</style>${trackingScripts()}</head><body>${header()}<main id="main"><section class="page-hero"><div class="wrap"><div class="page-hero-grid"><div><span class="eyebrow"><i class="signal"></i>404 · Page not found</span><h1>This case file is not here.</h1><p>The page may have moved during the Casevault website rebuild. Return home or explore the platform.</p><div class="hero-actions"><a class="btn" href="/">Back to Casevault →</a><a class="btn ghost" href="/features/">Explore features</a></div></div>${dashboard()}</div></div></section></main>${footer()}</body></html>`;
 }

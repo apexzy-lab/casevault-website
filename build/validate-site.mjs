@@ -59,6 +59,15 @@ for (const file of htmlFiles) {
   if ((html.match(/<h1\b/g) || []).length !== 1) {
     failures.push(`${name}: must contain exactly one H1`);
   }
+  if (!html.includes("googletagmanager.com/gtag/js?id=G-DMWXJF49EN")) {
+    failures.push(`${name}: missing Google Analytics tag G-DMWXJF49EN`);
+  }
+  if (!html.includes("gtag('config', 'G-DMWXJF49EN')")) {
+    failures.push(`${name}: missing Google Analytics configuration`);
+  }
+  if (!html.includes('"clarity", "script", "xho5gxn9ua"')) {
+    failures.push(`${name}: missing Microsoft Clarity tag xho5gxn9ua`);
+  }
   if (!is404) {
     if (!/<title>[^<]{10,}<\/title>/.test(html)) failures.push(`${name}: missing title`);
     if (!/<meta name="description" content="[^"]{40,}"/.test(html)) {
@@ -118,5 +127,5 @@ if (failures.length) {
 }
 
 console.log(
-  `Validated ${htmlFiles.length - 1} indexable pages, 1 custom 404, internal links, metadata, JSON-LD, and Cloudflare control files.`,
+  `Validated ${htmlFiles.length - 1} indexable pages, 1 custom 404, analytics, internal links, metadata, JSON-LD, and Cloudflare control files.`,
 );
