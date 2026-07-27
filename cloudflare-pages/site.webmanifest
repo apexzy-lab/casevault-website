@@ -1,0 +1,16 @@
+{
+  "name": "Casevault",
+  "short_name": "Casevault",
+  "description": "Immigration case management software for organized practices.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f7f3",
+  "theme_color": "#111927",
+  "icons": [
+    {
+      "src": "/assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -6,10 +6,11 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "node build/static-site.mjs --serve",
-    "build": "node build/static-site.mjs",
-    "start": "node build/static-site.mjs --serve",
-    "test": "npm run build",
+    "dev": "node build/cloudflare-pages.mjs --serve",
+    "build": "node build/cloudflare-pages.mjs",
+    "start": "node build/cloudflare-pages.mjs --serve",
+    "validate": "node build/validate-site.mjs",
+    "test": "npm run build && npm run validate",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },
