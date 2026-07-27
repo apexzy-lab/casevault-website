@@ -10,7 +10,11 @@
     "build": "node build/cloudflare-pages.mjs",
     "start": "node build/cloudflare-pages.mjs --serve",
     "validate": "node build/validate-site.mjs",
-    "test": "npm run build && npm run validate"
+    "test": "npm run build && npm run validate",
+    "cloudflare:check": "wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "wrangler": "4.114.0"
   },
   "type": "module"
 }

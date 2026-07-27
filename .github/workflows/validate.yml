@@ -29,3 +29,6 @@ jobs:
 
       - name: Build and validate the production site
         run: npm test
+
+      - name: Validate the Cloudflare Workers deployment configuration
+        run: npm run cloudflare:check

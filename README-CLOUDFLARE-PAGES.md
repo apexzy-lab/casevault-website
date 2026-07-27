@@ -49,6 +49,20 @@ domain is verified and the final deployment has been checked.
 Every future merge or push to `main` will trigger a new Cloudflare Pages
 deployment. Pull requests receive isolated Cloudflare preview deployments.
 
+## Workers Builds static-assets settings
+
+If the Cloudflare dashboard requires a Deploy command, it has selected Workers
+Builds. This repository also supports that flow through `wrangler.jsonc`:
+
+- Build command: `npm run build`
+- Deploy command: `npx wrangler deploy`
+- Non-production deploy command: `npx wrangler versions upload`
+- Root directory: `/`
+
+Wrangler is pinned in `package.json`, the Worker name matches the Cloudflare
+project, and the generated static site uses automatic trailing-slash handling
+plus the custom `404.html` page.
+
 ## Before the domain switch
 
 1. Confirm the app, support and `sales@casvault.com` destinations are correct.
