@@ -68,6 +68,19 @@ for (const file of htmlFiles) {
   if (!html.includes('"clarity", "script", "xho5gxn9ua"')) {
     failures.push(`${name}: missing Microsoft Clarity tag xho5gxn9ua`);
   }
+  if (!html.includes("document.querySelectorAll('[data-pricing]')")) {
+    failures.push(`${name}: missing site-wide pricing interaction controller`);
+  }
+  if (name === "pricing/index.html") {
+    for (const annualPrice of ["$384", "$888", "$1,788"]) {
+      if (!html.includes(`data-annual="${annualPrice}"`)) {
+        failures.push(`${name}: missing annual price ${annualPrice}`);
+      }
+    }
+    if (!html.includes('data-period="annual" aria-pressed="false"')) {
+      failures.push(`${name}: annual billing control is not accessible`);
+    }
+  }
   if (!is404) {
     if (!/<title>[^<]{10,}<\/title>/.test(html)) failures.push(`${name}: missing title`);
     if (!/<meta name="description" content="[^"]{40,}"/.test(html)) {
