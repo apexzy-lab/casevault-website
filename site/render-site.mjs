@@ -2,6 +2,7 @@ const DOMAIN = "https://casvault.com";
 const APP_URL = "https://app.casvault.com/";
 const SUPPORT_URL = "https://support.casvault.com/";
 const SALES_URL = "mailto:sales@casvault.com";
+export const SEO_LAST_MODIFIED = "2026-08-03";
 
 export const routes = [
   "/",
@@ -422,50 +423,70 @@ function privacyPage() {
 
 function jsonLd(path) {
   const data = pageData[path] || pageData["/"];
-  const schemas = [
+  const canonical = `${DOMAIN}${path === "/" ? "/" : path}`;
+  const pageType = path === "/about/" ? "AboutPage" : path === "/contact/" ? "ContactPage" : path === "/faq/" ? "FAQPage" : "WebPage";
+  const graph = [
     {
-      "@context":"https://schema.org","@type":"Organization","@id":`${DOMAIN}/#organization`,
-      name:"Casevault",legalName:"Rova Media Digital, Inc.",url:DOMAIN,email:"sales@casvault.com",logo:`${DOMAIN}/assets/casevault-wordmark.png`,
+      "@type":"Organization","@id":`${DOMAIN}/#organization`,
+      name:"Casevault",legalName:"Rova Media Digital, Inc.",url:`${DOMAIN}/`,email:"sales@casvault.com",
+      logo:{"@type":"ImageObject","@id":`${DOMAIN}/#logo`,url:`${DOMAIN}/assets/casevault-wordmark.png`,contentUrl:`${DOMAIN}/assets/casevault-wordmark.png`,width:552,height:122,caption:"Casevault"},
+      image:{"@id":`${DOMAIN}/#logo`},
       description:"Immigration case management software for consultants and firms working across borders.",
-      sameAs:["https://www.linkedin.com/company/casevault/","https://x.com/casevaultc"]
+      areaServed:"Worldwide",
+      contactPoint:[
+        {"@type":"ContactPoint",contactType:"sales",email:"sales@casvault.com",url:`${DOMAIN}/contact/`,availableLanguage:"English"},
+        {"@type":"ContactPoint",contactType:"customer support",url:SUPPORT_URL,availableLanguage:"English"}
+      ],
+      sameAs:["https://www.linkedin.com/company/casevault","https://x.com/casevaultc"]
     },
     {
-      "@context":"https://schema.org","@type":"WebSite","@id":`${DOMAIN}/#website`,
-      url:DOMAIN,name:"Casevault",publisher:{"@id":`${DOMAIN}/#organization`},inLanguage:"en"
+      "@type":pageType,"@id":`${canonical}#webpage`,url:canonical,name:data.title,description:data.description,
+      isPartOf:{"@id":`${DOMAIN}/#website`},publisher:{"@id":`${DOMAIN}/#organization`},
+      primaryImageOfPage:{"@id":`${DOMAIN}/#primaryimage`},inLanguage:"en",dateModified:SEO_LAST_MODIFIED
+    },
+    {
+      "@type":"ImageObject","@id":`${DOMAIN}/#primaryimage`,url:`${DOMAIN}/assets/casevault-social.png`,contentUrl:`${DOMAIN}/assets/casevault-social.png`,caption:"Casevault immigration case management software"
     }
   ];
   if (path === "/") {
-    schemas.push({
-      "@context":"https://schema.org","@type":"WebApplication","@id":`${DOMAIN}/#software`,
-      name:"Casevault",url:DOMAIN,applicationCategory:"BusinessApplication",operatingSystem:"Web",
-      description:data.description,
-      offers:[
-        {"@type":"Offer",name:"Starter",price:"39",priceCurrency:"USD",url:`${DOMAIN}/pricing/`},
-        {"@type":"Offer",name:"Pro",price:"89",priceCurrency:"USD",url:`${DOMAIN}/pricing/`},
-        {"@type":"Offer",name:"Agency",price:"179",priceCurrency:"USD",url:`${DOMAIN}/pricing/`}
-      ],
-      publisher:{"@id":`${DOMAIN}/#organization`}
+    graph.push({
+      "@type":"WebSite","@id":`${DOMAIN}/#website`,url:`${DOMAIN}/`,name:"Casevault",alternateName:"casvault.com",
+      description:data.description,publisher:{"@id":`${DOMAIN}/#organization`},inLanguage:"en"
     });
   }
   if (path !== "/") {
     const label = path.split("/").filter(Boolean).pop().replaceAll("-"," ");
-    schemas.push({
-      "@context":"https://schema.org","@type":"BreadcrumbList",
+    graph.push({
+      "@type":"BreadcrumbList","@id":`${canonical}#breadcrumb`,
       itemListElement:[
-        {"@type":"ListItem",position:1,name:"Home",item:DOMAIN},
-        {"@type":"ListItem",position:2,name:label.replace(/\b\w/g,(c)=>c.toUpperCase()),item:`${DOMAIN}${path}`}
+        {"@type":"ListItem",position:1,name:"Home",item:`${DOMAIN}/`},
+        {"@type":"ListItem",position:2,name:label.replace(/\b\w/g,(c)=>c.toUpperCase()),item:canonical}
       ]
     });
+    graph[1].breadcrumb = {"@id":`${canonical}#breadcrumb`};
   }
   if (path === "/faq/") {
-    schemas.push({
-      "@context":"https://schema.org","@type":"FAQPage",
-      mainEntity:faqs.map(([q,a])=>({"@type":"Question",name:q,acceptedAnswer:{"@type":"Answer",text:a}}))
-    });
+    graph[1].mainEntity = faqs.map(([q,a])=>({"@type":"Question",name:q,acceptedAnswer:{"@type":"Answer",text:a}}));
   }
-  if (path === "/about/") schemas.push({"@context":"https://schema.org","@type":"AboutPage","@id":`${DOMAIN}/about/#page`,url:`${DOMAIN}/about/`,name:data.title});
-  if (path === "/contact/") schemas.push({"@context":"https://schema.org","@type":"ContactPage","@id":`${DOMAIN}/contact/#page`,url:`${DOMAIN}/contact/`,name:data.title});
-  return schemas.map((schema)=>`<script type="application/ld+json">${JSON.stringify(schema)}</script>`).join("");
+  if (path === "/pricing/") {
+    graph.push({
+      "@type":"WebApplication","@id":`${DOMAIN}/#software`,name:"Casevault",url:`${DOMAIN}/`,
+      applicationCategory:"BusinessApplication",operatingSystem:"Web",description:data.description,
+      audience:{"@type":"BusinessAudience",audienceType:"Immigration consultants, immigration law firms and multi-country immigration practices"},
+      featureList:["Immigration case management","Client and matter records","Document management","Client portal","Task and deadline tracking","Invoicing","Team collaboration"],
+      offers:[
+        {"@type":"Offer",name:"Starter monthly",price:"39",priceCurrency:"USD",url:`${DOMAIN}/pricing/`,availability:"https://schema.org/InStock"},
+        {"@type":"Offer",name:"Starter annual",price:"384",priceCurrency:"USD",url:`${DOMAIN}/pricing/`,availability:"https://schema.org/InStock"},
+        {"@type":"Offer",name:"Pro monthly",price:"89",priceCurrency:"USD",url:`${DOMAIN}/pricing/`,availability:"https://schema.org/InStock"},
+        {"@type":"Offer",name:"Pro annual",price:"888",priceCurrency:"USD",url:`${DOMAIN}/pricing/`,availability:"https://schema.org/InStock"},
+        {"@type":"Offer",name:"Agency monthly",price:"179",priceCurrency:"USD",url:`${DOMAIN}/pricing/`,availability:"https://schema.org/InStock"},
+        {"@type":"Offer",name:"Agency annual",price:"1788",priceCurrency:"USD",url:`${DOMAIN}/pricing/`,availability:"https://schema.org/InStock"}
+      ],
+      publisher:{"@id":`${DOMAIN}/#organization`}
+    });
+    graph[1].about = {"@id":`${DOMAIN}/#software`};
+  }
+  return `<script type="application/ld+json">${JSON.stringify({"@context":"https://schema.org","@graph":graph})}</script>`;
 }
 
 function trackingScripts() {
@@ -523,10 +544,10 @@ function shell(path, body) {
   return `<!doctype html><html lang="en"><head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <title>${data.title}</title><meta name="description" content="${data.description}">
-    <meta name="keywords" content="${data.keywords}"><meta name="robots" content="index,follow,max-image-preview:large">
-    <link rel="canonical" href="${canonical}"><meta name="theme-color" content="#111927">
-    <meta property="og:type" content="website"><meta property="og:site_name" content="Casevault"><meta property="og:title" content="${data.title}"><meta property="og:description" content="${data.description}"><meta property="og:url" content="${canonical}"><meta property="og:image" content="${DOMAIN}/assets/casevault-social.png">
-    <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${data.title}"><meta name="twitter:description" content="${data.description}"><meta name="twitter:image" content="${DOMAIN}/assets/casevault-social.png">
+    <meta name="keywords" content="${data.keywords}"><meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
+    <link rel="canonical" href="${canonical}"><link rel="sitemap" type="application/xml" href="/sitemap.xml"><meta name="theme-color" content="#111927">
+    <meta property="og:type" content="website"><meta property="og:locale" content="en_US"><meta property="og:site_name" content="Casevault"><meta property="og:title" content="${data.title}"><meta property="og:description" content="${data.description}"><meta property="og:url" content="${canonical}"><meta property="og:image" content="${DOMAIN}/assets/casevault-social.png"><meta property="og:image:alt" content="Casevault immigration case management software">
+    <meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@casevaultc"><meta name="twitter:title" content="${data.title}"><meta name="twitter:description" content="${data.description}"><meta name="twitter:image" content="${DOMAIN}/assets/casevault-social.png"><meta name="twitter:image:alt" content="Casevault immigration case management software">
     <meta name="application-name" content="Casevault"><meta name="apple-mobile-web-app-title" content="Casevault">
     <link rel="icon" href="/assets/favicon.ico" sizes="any"><link rel="icon" href="/assets/favicon-32x32.png" type="image/png" sizes="32x32"><link rel="icon" href="/assets/favicon-16x16.png" type="image/png" sizes="16x16"><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" sizes="180x180"><link rel="manifest" href="/site.webmanifest">
     ${jsonLd(path)}<style>${css}</style>${trackingScripts()}

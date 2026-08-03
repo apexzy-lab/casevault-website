@@ -2,12 +2,11 @@ import { createServer } from "node:http";
 import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
-import { render404, renderSite } from "../site/render-site.mjs";
+import { SEO_LAST_MODIFIED, render404, renderSite } from "../site/render-site.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const output = join(root, "cloudflare-pages");
 const pages = renderSite();
-const lastModified = "2026-07-27";
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -25,21 +24,11 @@ function routeFile(route) {
 }
 
 function sitemap() {
-  const priorities = {
-    "/": "1.0",
-    "/features/": "0.9",
-    "/case-management/": "0.9",
-    "/document-management/": "0.9",
-    "/client-portal/": "0.9",
-    "/pricing/": "0.9",
-  };
   const urls = Object.keys(pages)
     .map(
       (route) => `  <url>
     <loc>https://casvault.com${route === "/" ? "/" : route}</loc>
-    <lastmod>${lastModified}</lastmod>
-    <changefreq>${route === "/" ? "weekly" : "monthly"}</changefreq>
-    <priority>${priorities[route] || "0.7"}</priority>
+    <lastmod>${SEO_LAST_MODIFIED}</lastmod>
   </url>`,
     )
     .join("\n");

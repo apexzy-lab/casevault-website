@@ -1,10 +1,14 @@
 import { access, readFile, readdir } from "node:fs/promises";
 import { extname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { SEO_LAST_MODIFIED } from "../site/render-site.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const output = join(root, "cloudflare-pages");
 const failures = [];
+const titles = new Map();
+const descriptions = new Map();
+const canonicals = new Map();
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -82,22 +86,57 @@ for (const file of htmlFiles) {
     }
   }
   if (!is404) {
-    if (!/<title>[^<]{10,}<\/title>/.test(html)) failures.push(`${name}: missing title`);
-    if (!/<meta name="description" content="[^"]{40,}"/.test(html)) {
+    const title = html.match(/<title>([^<]+)<\/title>/)?.[1];
+    const description = html.match(/<meta name="description" content="([^"]+)"/)?.[1];
+    const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
+    if (!title || title.length < 10) failures.push(`${name}: missing title`);
+    if (!description || description.length < 40) {
       failures.push(`${name}: missing useful meta description`);
     }
-    if (!/<link rel="canonical" href="https:\/\/casvault\.com\//.test(html)) {
+    if (!canonical?.startsWith("https://casvault.com/")) {
       failures.push(`${name}: missing canonical URL`);
+    }
+    if (title) titles.set(title, [...(titles.get(title) || []), name]);
+    if (description) descriptions.set(description, [...(descriptions.get(description) || []), name]);
+    if (canonical) canonicals.set(canonical, [...(canonicals.get(canonical) || []), name]);
+    if (!html.includes('name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1"')) {
+      failures.push(`${name}: missing complete search preview directives`);
+    }
+    if (!html.includes('<link rel="sitemap" type="application/xml" href="/sitemap.xml">')) {
+      failures.push(`${name}: missing sitemap discovery link`);
     }
   }
 
+  const structuredData = [];
   for (const match of html.matchAll(
     /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g,
   )) {
     try {
-      JSON.parse(match[1]);
+      structuredData.push(JSON.parse(match[1]));
     } catch (error) {
       failures.push(`${name}: invalid JSON-LD (${error.message})`);
+    }
+  }
+  if (!is404) {
+    const graph = structuredData.flatMap((schema) => schema["@graph"] || [schema]);
+    const types = new Set(graph.map((node) => node["@type"]));
+    if (!types.has("Organization")) failures.push(`${name}: missing Organization schema`);
+    if (!["WebPage", "AboutPage", "ContactPage", "FAQPage"].some((type) => types.has(type))) {
+      failures.push(`${name}: missing page-level schema`);
+    }
+    const pageNode = graph.find((node) => ["WebPage", "AboutPage", "ContactPage", "FAQPage"].includes(node["@type"]));
+    if (pageNode?.dateModified !== SEO_LAST_MODIFIED) failures.push(`${name}: stale schema modification date`);
+    if (name === "index.html") {
+      const website = graph.find((node) => node["@type"] === "WebSite");
+      if (!website || website.name !== "Casevault" || website.alternateName !== "casvault.com") {
+        failures.push(`${name}: incomplete WebSite schema for Google site name`);
+      }
+    } else if (!types.has("BreadcrumbList")) {
+      failures.push(`${name}: missing BreadcrumbList schema`);
+    }
+    if (name === "pricing/index.html") {
+      const software = graph.find((node) => node["@type"] === "WebApplication");
+      if (!software || software.offers?.length !== 6) failures.push(`${name}: incomplete WebApplication offers schema`);
     }
   }
 
@@ -108,6 +147,24 @@ for (const file of htmlFiles) {
     }
   }
 }
+
+for (const [value, files] of [...titles, ...descriptions, ...canonicals]) {
+  if (files.length > 1) failures.push(`duplicate SEO value across ${files.join(", ")}: ${value}`);
+}
+
+const sitemapXml = await readFile(join(output, "sitemap.xml"), "utf8");
+const robotsTxt = await readFile(join(output, "robots.txt"), "utf8");
+for (const canonical of canonicals.keys()) {
+  if (!sitemapXml.includes(`<loc>${canonical}</loc>`)) failures.push(`sitemap missing canonical URL ${canonical}`);
+}
+if ((sitemapXml.match(/<url>/g) || []).length !== canonicals.size) failures.push("sitemap URL count does not match indexable pages");
+if ((sitemapXml.match(new RegExp(`<lastmod>${SEO_LAST_MODIFIED}<\\/lastmod>`, "g")) || []).length !== canonicals.size) {
+  failures.push("sitemap modification dates are missing or stale");
+}
+if (sitemapXml.includes("<changefreq>") || sitemapXml.includes("<priority>")) {
+  failures.push("sitemap contains unsupported changefreq or priority hints");
+}
+if (!robotsTxt.includes("Sitemap: https://casvault.com/sitemap.xml")) failures.push("robots.txt is missing the absolute sitemap URL");
 
 for (const required of [
   "index.html",
